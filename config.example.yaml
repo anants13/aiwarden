@@ -1,0 +1,73 @@
+# aiwarden example configuration: every option with its default.
+# Copy to ~/.aiwarden/config.yaml (or ./aiwarden.yaml) and edit.
+
+# Your country (ISO 3166-1 alpha-2). Connections outside home_country +
+# allow_countries raise HIGH "cross-border" alerts.
+home_country: IN
+allow_countries: []
+
+mode: alert              # v0.1 only supports alert (never blocks)
+
+geoip:
+  country_db: ~/.aiwarden/geo/dbip-country-lite.mmdb
+  asn_db: ~/.aiwarden/geo/dbip-asn-lite.mmdb
+
+egress:
+  # Processes to watch. "name" = exact process name, "cmd:text" = substring of command line.
+  # Add your own agents here, e.g. "cmd:my_agent.py" or "cmd:open-interpreter".
+  processes:
+    - ollama
+    - llama-server
+    - llama-cli
+    - lms
+    - LM Studio
+    - koboldcpp
+    - cmd:vllm
+    - cmd:text-generation-launcher
+    - cmd:llama_cpp.server
+    - cmd:sglang
+  include_children: true       # also watch everything those processes spawn
+  interval: 1.0                # seconds between polls
+
+  # Never alert for these destinations (still logged as info).
+  allow_domains:
+    - huggingface.co
+    - cdn-lfs.huggingface.co
+    - cdn-lfs.hf.co
+    - cas-bridge.xethub.hf.co
+    - registry.ollama.ai
+  allow_asns: []               # e.g. [13335] for Cloudflare
+  allow_cidrs: []              # e.g. ["203.0.113.0/24"]
+  alert_on_lan: false
+
+  # Inference servers should be quiet after they finish loading.
+  silent_processes: [ollama, llama-server, "cmd:vllm", "cmd:llama_cpp.server"]
+  silent_grace_seconds: 120
+
+  suspicious_children: [sh, bash, zsh, dash, fish, curl, wget, nc, ncat, netcat, socat,
+                        ssh, scp, sftp, rsync, ftp, telnet, base64, openssl, osascript, security]
+  alert_on_public_listen: true
+
+gateway:
+  listen_host: 127.0.0.1
+  listen_port: 8787
+  upstream: http://127.0.0.1:11434   # Ollama. vLLM: http://127.0.0.1:8000, LM Studio: http://127.0.0.1:1234
+  detectors:
+    secrets: true
+    pii: true
+    prompt_injection: true
+    tool_calls: true
+    exfil_urls: true
+  store_snippets: true         # store redacted context of matches in the event log
+  max_inspect_bytes: 4000000
+
+alerts:
+  console: {min_severity: low}
+  desktop: {enabled: true, min_severity: medium}
+  jsonl: {enabled: true, path: ~/.aiwarden/events.jsonl, min_severity: info}
+  sqlite: {enabled: true, path: ~/.aiwarden/events.db, min_severity: info}
+  webhooks: []
+  #  - {url: "https://ntfy.sh/<long-random-topic>", format: ntfy, min_severity: high}
+  #  - {url: "https://hooks.slack.com/services/...", format: slack, min_severity: medium}
+  #  - {url: "https://example.com/hook", format: json, min_severity: medium}
+  dedupe_seconds: 600          # repeat alerts with the same key are suppressed for this long
