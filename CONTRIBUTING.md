@@ -5,7 +5,7 @@ Thanks for helping! aiwarden is a security tool, so we care about **clarity, low
 ## Dev setup
 
 ```bash
-git clone https://github.com/OWNER/aiwarden && cd aiwarden
+git clone https://github.com/anants13/aiwarden && cd aiwarden
 python -m venv .venv && . .venv/bin/activate     # or: uv venv && uv pip install -e '.[dev]'
 pip install -e '.[dev]'
 pytest
